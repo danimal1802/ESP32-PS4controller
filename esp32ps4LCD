@@ -1,0 +1,237 @@
+// PS4 controller connected to ESP32
+// 
+// Baseline examples for reading / testing controller values 
+// Note: buttons that can/cannot be pressed simultaneously
+// Based on initial work from jvpernis (2019) on Github
+// Driver failes to function with accelerometer and gyro data from the controller 
+
+
+#include <PS4Controller.h>
+#include <LiquidCrystal_I2C.h>
+
+LiquidCrystal_I2C lcd(0x27,20,4);  // set the LCD address
+
+void setup() {
+  Serial.begin(115200);
+
+  lcd.init();
+  lcd.clear();
+  lcd.backlight();      // Make sure backlight is on
+
+  lcd.setCursor(0,0);   //Set cursor to character 2 on line 0
+  lcd.print("PS4 Controller");
+
+  PS4.begin("1a:2b:3c:01:01:01");
+  Serial.println("Ready.");
+}
+
+void loop() {
+  // Below has all accessible outputs from the controller
+  if (PS4.isConnected()) {
+    if (PS4.Left()) {
+      Serial.print("L");
+      lcd.setCursor(0,1);
+      lcd.print("L");
+    } else {
+      Serial.print(" ");
+      lcd.setCursor(0,1);
+      lcd.print(" ");
+    }
+    if (PS4.Right()) {
+      Serial.print("R");
+      lcd.setCursor(1,1);
+      lcd.print("R");
+    } else {
+      Serial.print(" ");
+      lcd.setCursor(1,1);
+      lcd.print(" ");
+    }    
+    if (PS4.Up()) {
+      Serial.print("U");
+      lcd.setCursor(2,1);
+      lcd.print("U");
+    } else {
+      Serial.print(" ");
+      lcd.setCursor(2,1);
+      lcd.print(" ");
+    }
+    if (PS4.Down()) {
+      Serial.print("D");
+      lcd.setCursor(3,1);
+      lcd.print("D");
+    } else {
+      Serial.print(" ");
+      lcd.setCursor(3,1);
+      lcd.print(" ");
+    }
+
+    if (PS4.UpRight()) {
+      Serial.print("UR");
+      lcd.setCursor(4,1);
+      lcd.print("UR");
+    } else {
+      Serial.print("  ");
+      lcd.setCursor(4,1);
+      lcd.print("  ");
+    }
+
+    if (PS4.DownRight()) {
+      Serial.print("DR");
+      lcd.setCursor(6,1);
+      lcd.print("DR");
+    } else {
+      Serial.print("  ");
+      lcd.setCursor(6,1);
+      lcd.print("  ");
+    }
+
+    if (PS4.UpLeft()) {
+      Serial.print("UL");
+      lcd.setCursor(8,1);
+      lcd.print("UL");
+    } else {
+      Serial.print("  ");
+      lcd.setCursor(8,1);
+      lcd.print("  ");
+    }
+
+    if (PS4.DownLeft()) {
+      Serial.print("DL");
+      lcd.setCursor(10,1);
+      lcd.print("DL");
+    } else {
+      Serial.print("  ");
+      lcd.setCursor(10,1);
+      lcd.print("  ");
+    }
+
+    if (PS4.Square()) {
+      Serial.print("S");
+      lcd.setCursor(12,1);
+      lcd.print("S");
+    } else {
+      Serial.print(" ");
+      lcd.setCursor(12,1);
+      lcd.print(" ");
+    }
+    if (PS4.Circle()) {
+      Serial.print("C");
+      lcd.setCursor(13,1);
+      lcd.print("C");
+    } else {
+      Serial.print(" ");
+      lcd.setCursor(13,1);
+      lcd.print(" ");
+    }
+    if (PS4.Triangle()) {
+      Serial.print("T");
+      lcd.setCursor(14,1);
+      lcd.print("T");
+    } else {
+      Serial.print(" ");
+      lcd.setCursor(14,1);
+      lcd.print(" ");
+    }
+    if (PS4.Cross()) {
+      Serial.print("X");
+      lcd.setCursor(15,1);
+      lcd.print("X");
+    } else {
+      Serial.print(" ");
+      lcd.setCursor(15,1);
+      lcd.print(" ");
+    }
+    
+    if (PS4.L1()) {
+      Serial.print("L1");
+      lcd.setCursor(0,2);
+      lcd.print("L1");
+    } else {
+      Serial.print("  ");
+      lcd.setCursor(0,2);
+      lcd.print("  ");
+    }
+
+    if (PS4.R1()) {
+      Serial.print("R1");
+      lcd.setCursor(2,2);
+      lcd.print("R1");
+    } else {
+      Serial.print("  ");
+      lcd.setCursor(2,2);
+      lcd.print("  ");
+    }
+//    if (PS4.L1()) Serial.print("L1"); else Serial.print("  ");
+//    if (PS4.R1()) Serial.print("R1"); else Serial.print("  ");
+    
+    Serial.printf(" L2=%3d", PS4.L2Value());
+    lcd.setCursor(5,2);
+    lcd.printf("L2=%3d", PS4.L2Value());
+
+    Serial.printf(" R2=%3d", PS4.R2Value());
+    lcd.setCursor(12,2);
+    lcd.printf("R2=%3d", PS4.R2Value());
+
+    //Serial.printf(" L2=%3d", PS4.L2Value()); 
+    //Serial.printf(" R2=%3d", PS4.R2Value());
+    //if (PS4.L2()) Serial.print("L2"); else Serial.print("  ");
+    //if (PS4.R2()) Serial.print("R2"); else Serial.print("  ");
+    if (PS4.Share()) {
+      Serial.print("SHR");
+      lcd.setCursor(14,0);
+      lcd.print("SH");
+    } else {
+      Serial.print("   ");
+      lcd.setCursor(14,0);
+      lcd.print("  ");
+    }
+
+    if (PS4.Options()) {
+      Serial.print("OPT");
+      lcd.setCursor(16,0);
+      lcd.print("OP");
+    } else {
+      Serial.print("   ");
+      lcd.setCursor(16,0);
+      lcd.print("  ");
+    }
+
+    if (PS4.Touchpad()) {
+      Serial.print("PAD");
+      lcd.setCursor(18,0);
+      lcd.print("PD");
+    } else {
+      Serial.print("   ");
+      lcd.setCursor(18,0);
+      lcd.print("  ");
+    }
+//    if (PS4.Share()) Serial.print("SHR"); else Serial.print("   ");
+//    if (PS4.Options()) Serial.print("OPT"); else Serial.print("   ");
+//    if (PS4.PSButton()) Serial.println("PS Button");
+//    if (PS4.Touchpad()) Serial.print("PAD"); else Serial.print("   ");
+
+    Serial.printf("LS(%4d", PS4.LStickX()); Serial.printf(",%4d) ", PS4.LStickY());
+    lcd.setCursor(0,3);
+    lcd.printf("(%4d", PS4.LStickX()); 
+    lcd.setCursor(5,3);
+    lcd.printf("%4d)", PS4.LStickY());     
+
+    Serial.printf("RS(%4d", PS4.RStickX()); Serial.printf(",%4d) ", PS4.RStickY());
+    lcd.setCursor(10,3);
+    lcd.printf("(%4d", PS4.RStickX()); 
+    lcd.setCursor(15,3);
+    lcd.printf("%4d)", PS4.RStickY());      
+
+    //Serial.printf(" Xacc:%d",PS4.data.sensor.accelerometer.x); 
+    //Serial.printf(" XGyr:%d",PS4.data.sensor.gyroscope.z);
+    //if (PS4.Charging()) Serial.println("The controller is charging");
+    //if (PS4.Audio()) Serial.println("The controller has headphones attached");
+    //if (PS4.Mic()) Serial.println("The controller has a mic attached");
+
+    Serial.printf("[Batt=%3d]",PS4.Battery());
+  
+    Serial.println();
+    // This delay is to make the output more human readable
+    // delay(1000);
+  }
+}
