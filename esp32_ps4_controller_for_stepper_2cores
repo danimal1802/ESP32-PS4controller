@@ -1,0 +1,155 @@
+/*********
+  Daniel Mitchell - 9th July 2023
+  PS4 Motor closed loop stepper motor controller 
+  Dual core with 
+    Core1 / task1 = motor temperature sensor readings on core2
+    Core2 / task2 = motor controls from bluetooth PS4 controller
+  
+  Dual cores should allow fast loop for Core2 motor control and slower-loop motor temp readings and LCD updates
+*********/
+
+TaskHandle_t Task1;
+TaskHandle_t Task2;
+
+#include <PS4Controller.h>
+#include <LiquidCrystal_I2C.h>
+#include <Wire.h>
+#include <Adafruit_BMP280.h>
+
+LiquidCrystal_I2C lcd(0x27,20,4);  // set the LCD address
+Adafruit_BMP280 bmp;               // use I2C interface 
+//Adafruit_Sensor *bmp_temp = bmp.getTemperatureSensor();
+
+// Constants
+const int stepPin = 19;  // Connect this to the step pin on your driver
+const int dirPin = 18;   // Connect this to the dir pin on your driver
+const int enablePin = 5; // Enable pin for motor controller
+
+// Variables
+uint8_t motorSpeed = 0;  // Adjust this value from 0 to 255 to control the motor
+uint8_t l2 = 0;
+uint8_t r2 = 0;
+
+// LED pins
+const int led1 = 26;
+const int led2 = 27;
+
+void setup() {
+  Serial.begin(115200); 
+  pinMode(led1, OUTPUT);
+  pinMode(led2, OUTPUT);
+
+  pinMode(stepPin, OUTPUT);
+  pinMode(dirPin,  OUTPUT);
+  pinMode(enablePin, OUTPUT);
+  digitalWrite(enablePin, LOW);
+
+  lcd.init();
+  lcd.clear();
+  lcd.backlight();      // Make sure backlight is on
+
+  lcd.setCursor(0,0);   //Set cursor to character 2 on line 0
+  lcd.print("PS4 Controller");
+  lcd.setCursor(0,1);   //Set cursor to character 2 on line 0
+  lcd.print("Closed Loop Stepper");
+  lcd.setCursor(0,2);   //Set cursor to character 2 on line 0
+  lcd.print("Motor temp:");
+
+  if  (!bmp.begin()) {
+    Serial.println(F("Could not find a valid BMP280 sensor,  check wiring!"));
+    while (1);
+  }
+
+  /* Default settings from datasheet.  */
+  bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
+                  Adafruit_BMP280::SAMPLING_X2,     /* Temp. oversampling */
+                  Adafruit_BMP280::SAMPLING_X16,    /* Pressure oversampling */
+                  Adafruit_BMP280::FILTER_X16,      /* Filtering. */
+                  Adafruit_BMP280::STANDBY_MS_500);  /* Standby time. */
+
+  //Serial.begin(115200);
+  PS4.begin("1a:2b:3c:01:01:01");
+  Serial.println("Ready.");
+
+  //create a task that will be executed in the Task1code() function, with priority 1 and executed on core 0
+  xTaskCreatePinnedToCore(
+                    Task1code,   /* Task function. */
+                    "Task1",     /* name of task. */
+                    10000,       /* Stack size of task */
+                    NULL,        /* parameter of the task */
+                    2,           /* priority of the task */
+                    &Task1,      /* Task handle to keep track of created task */
+                    0);          /* pin task to core 0 */                  
+  delay(500); 
+
+  //create a task that will be executed in the Task2code() function, with priority 1 and executed on core 1
+  xTaskCreatePinnedToCore(
+                    Task2code,   /* Task function. */
+                    "Task2",     /* name of task. */
+                    10000,       /* Stack size of task */
+                    NULL,        /* parameter of the task */
+                    1,           /* priority of the task */
+                    &Task2,      /* Task handle to keep track of created task */
+                    1);          /* pin task to core 1 */
+    delay(500); 
+}
+
+//Task1code: blinks an LED every 1000 ms
+void Task1code( void * pvParameters ){
+  //Serial.print("Task1 running on core ");
+  //Serial.println(xPortGetCoreID());
+
+
+  for(;;){
+    //lcd.clear();
+    //lcd.setCursor(0,0);   //Set cursor to character 2 on line 0
+    //lcd.print("PS4 Controller");
+    //lcd.setCursor(0,1);   //Set cursor to character 2 on line 0
+    //lcd.print("Closed Loop Stepper");
+    //lcd.setCursor(0,2);   //Set cursor to character 2 on line 0
+    //lcd.print("                   ");
+    //lcd.print("Motor temp:");
+    lcd.setCursor(12,2);
+    lcd.print("        ");
+    lcd.setCursor(12,2);
+    lcd.print(bmp.readTemperature());
+    digitalWrite(led1, HIGH);
+    delay(5);
+    digitalWrite(led1, LOW);
+    //54732delay(5);
+    //Serial.print("Motor Temp: ");
+    //Serial.println(bmp.readTemperature());
+    delay(5000);
+  } 
+}
+
+//Task2code: blinks an LED every 100 ms
+void Task2code( void * pvParameters ){
+  //Serial.print("Task2 running on core ");
+  //Serial.println(xPortGetCoreID());
+
+  for(;;){
+    if (PS4.isConnected()) {
+      l2 = int(PS4.L2Value());
+      r2 = int(PS4.R2Value());
+      if ((l2 > 0) && (r2==0)){
+        digitalWrite(dirPin, LOW);
+        digitalWrite(stepPin, HIGH);
+        delayMicroseconds(int(16384/l2));
+        digitalWrite(stepPin, LOW);
+        delayMicroseconds(int(16384/l2));
+      }
+      if ((r2 > 0) && (l2==0)){
+        digitalWrite(dirPin, HIGH);
+        digitalWrite(stepPin, HIGH);
+        delayMicroseconds(int(16384/r2));
+        digitalWrite(stepPin, LOW);
+        delayMicroseconds(int(16384/r2));      
+      }
+    }
+  }
+}
+
+void loop() {
+  
+}
